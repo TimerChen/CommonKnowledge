@@ -56,6 +56,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.test:
         print("Using test mode...")
-        importData('../datasets/', 10, 'minidata')
+        importData('./datasets/', 10, 'minidata')
     else:
-        importData('../datasets/', 5000)
+        importData('./datasets/', 5000)

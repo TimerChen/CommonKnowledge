@@ -51,8 +51,14 @@ def deal_text(text, font, width_limit = None):
                 j = width_limit
                 while not i[j] == ' ':
                     j-=1
+                    if j < 0 :
+                        j = width_limit
+                        break
                 res += i[:j] + '\n'
-                i = i[j+1:]
+                if i[j] == ' ':
+                    i = i[j+1:]
+                else:
+                    i = i[j:]
                 height += 1
                 
             if len(i) > 0:
@@ -62,7 +68,7 @@ def deal_text(text, font, width_limit = None):
     
     return res, width, height
 
-def genPics(file_name = 'data.csv', path_data = '../datasets/', folder='pics'):
+def genPics(file_name = 'data.csv', path_data = './datasets/', folder='pics'):
     data = pd.read_csv(path_data + file_name)
     width, height = 0, 0
     num = data.shape[0]
