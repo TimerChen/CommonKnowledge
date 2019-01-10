@@ -20,7 +20,7 @@ def genImage(char, width=None, height=None, font=None):
     w_size, h_size = font.getsize('a')
     h_size+=1
     image = Image.new('1', (width*w_size, height*h_size), 'white')
-    #print(width, height)
+    #width*w_size = 840
     #image = Image.new('1', (100, 100), 'white')
     draw = ImageDraw.Draw(image)
     if font is None:
@@ -78,7 +78,7 @@ def genPics(file_name = 'data.csv', path_data = '../datasets/', folder='pics'):
     pbar = pyprind.ProgBar(num)
     for i in range(num):
         #print(len(reviews[i]), sentiment[i])
-        reviews[i],w,h = deal_text(reviews[i], font, 100)
+        reviews[i],w,h = deal_text(reviews[i], font, 70)
         
         width = max(width, w)
         height = max(height, h)
