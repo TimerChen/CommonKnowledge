@@ -8,7 +8,7 @@ import argparse
 
 
 
-def importData(path_data, num=50000, file_name='data'):
+def importData(path_data, num=50000, file_name='data', dataType="train"):
     #总共有50000个文件
     pbar = pyprind.ProgBar(num)
     #将字符串类标数值化
@@ -16,7 +16,7 @@ def importData(path_data, num=50000, file_name='data'):
     data = pd.DataFrame()
 
 #    for s in ("test","train"):
-    for s in ("train",):
+    for s in (dataType,):
         for l in ("pos","neg"):
             left = num/2
             #获取电影评论的存放路径
@@ -57,5 +57,7 @@ if __name__ == '__main__':
     if args.test:
         print("Using test mode...")
         importData('./datasets/', 10, 'minidata')
+        importData('./datasets/', 10, 'minival', dataType="test")
     else:
-        importData('./datasets/', 5000)
+        importData('./datasets/', 5000, 'data')
+        importData('./datasets/', 5000, 'val', dataType="test")

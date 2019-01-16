@@ -108,8 +108,10 @@ if __name__ == '__main__':
     if args.test:
         print("Using test mode...")
         genPics(file_name = 'minidata.csv', folder='minipics')
+        genPics(file_name = 'minival.csv', folder='minivalpics')
     else:
         genPics()
+        genPics(file_name = 'val.csv', folder='valpics')
         
     
     

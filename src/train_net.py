@@ -13,6 +13,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 参数设置,使得我们能够手动输入命令行参数，就是让风格变得和Linux命令行差不多
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
+
+parser.add_argument('--test', action='store_true', dest='text') 
 parser.add_argument('--outf', default='./model/', help='folder to output images and model checkpoints') #输出结果保存路径
 parser.add_argument('--net', default='./model/Resnet18.pth', help="path to net (to continue training)")  #恢复训练时的模型路径
 args = parser.parse_args()
@@ -37,10 +39,18 @@ transform_test = transforms.Compose([
     transforms.Normalize((0.5,), (0.5,)),
 ])
 
-trainset = MyDataset(txt_path='./datasets/minidata.csv', pic_path='./datasets/minipics/', transform=transform_train) #训练数据集
+trainset, testset= None, None
+if parser.test:
+    trainset = MyDataset(txt_path='./datasets/minidata.csv', pic_path='./datasets/minipics/', transform=transform_train) #训练数据集
+    testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
+else:
+    trainset = MyDataset(txt_path='./datasets/data.csv', pic_path='./datasets/pics/', transform=transform_train) #训练数据集
+    testset = MyDataset(txt_path='./datasets/val.csv', pic_path='./datasets/valpics/', transform=transform_test)
+
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)   #生成一个个batch进行批训练，组成batch的时候顺序打乱取
 
-testset = MyDataset(txt_path='./datasets/data.csv', pic_path='./datasets/pics/', transform=transform_test)
+testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
+testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
 # Cifar-10的标签
 classes = ('neg', 'pos')
