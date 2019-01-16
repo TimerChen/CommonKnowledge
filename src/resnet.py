@@ -35,7 +35,7 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.inchannel = 64
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(1, 64, kernel_size=1, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(),
         )
