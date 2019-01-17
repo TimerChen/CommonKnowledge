@@ -19,7 +19,8 @@ def genImage(char, width=None, height=None, font=None):
         height = 1
     w_size, h_size = font.getsize('a')
     h_size+=1
-    image = Image.new('1', (width*w_size, height*h_size), 'white')
+    image = Image.new('1', (840, 720), 'white')
+
     #width*w_size = 840
     #image = Image.new('1', (100, 100), 'white')
     draw = ImageDraw.Draw(image)

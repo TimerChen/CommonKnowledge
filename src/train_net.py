@@ -49,15 +49,12 @@ else:
     testset = MyDataset(txt_path='./datasets/val.csv', pic_path='./datasets/valpics/', transform=transform_test)
 
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)   #生成一个个batch进行批训练，组成batch的时候顺序打乱取
-
-testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
-testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
 # Cifar-10的标签
 classes = ('neg', 'pos')
 
 # 模型定义-ResNet
-net = ResNet18().to(device)
+net = ResNet18(num_classes=2).to(device)
 
 # 定义损失函数和优化方式
 criterion = nn.CrossEntropyLoss()  #损失函数为交叉熵，多用于多分类问题
