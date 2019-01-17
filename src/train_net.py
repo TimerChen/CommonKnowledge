@@ -14,7 +14,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # 参数设置,使得我们能够手动输入命令行参数，就是让风格变得和Linux命令行差不多
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 
-parser.add_argument('--test', action='store_true', dest='text') 
+#parser.add_argument('--test', action='store_true', dest='test', help='None') 
+parser.add_argument('--test', dest='test', action='store_true')
 parser.add_argument('--outf', default='./model/', help='folder to output images and model checkpoints') #输出结果保存路径
 parser.add_argument('--net', default='./model/Resnet18.pth', help="path to net (to continue training)")  #恢复训练时的模型路径
 args = parser.parse_args()
@@ -40,7 +41,7 @@ transform_test = transforms.Compose([
 ])
 
 trainset, testset= None, None
-if parser.test:
+if args.test:
     trainset = MyDataset(txt_path='./datasets/minidata.csv', pic_path='./datasets/minipics/', transform=transform_train) #训练数据集
     testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
 else:

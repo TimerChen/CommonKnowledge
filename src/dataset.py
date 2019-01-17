@@ -31,7 +31,7 @@ class MyDataset(Dataset):
         img = self.loader(self.pic_path +'/'+ str(index) + ".png")
         if self.transform is not None:
             img = self.transform(img)
-        print(type(img), type(label))
+        #print(type(img), type(label))
         return img, label
 
     def __len__(self):
