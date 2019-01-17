@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--test', dest='test', action='store_true')
 parser.add_argument('--outf', default='./model/', help='folder to output images and model checkpoints') #输出结果保存路径
 parser.add_argument('--net', default='./model/Resnet18.pth', help="path to net (to continue training)")  #恢复训练时的模型路径
+parser.add_argument('--save_every', default=50, type=int)
 args = parser.parse_args()
 
 # 超参数设置
@@ -30,6 +31,7 @@ LR = 0.1        #学习率
 transform_train = transforms.Compose([
     #transforms.RandomCrop(32, padding=4),  #先四周填充0，在吧图像随机裁剪成32*32
     #transforms.RandomHorizontalFlip(),  #图像一半的概率翻转，一半的概率不翻转
+    transforms.Scale(200),
     transforms.ToTensor(),
     #transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), #R,G,B每层的归一化用到的均值和方差
     transforms.Normalize((0.5, ), (0.5, )),
@@ -43,10 +45,10 @@ transform_test = transforms.Compose([
 trainset, testset= None, None
 if args.test:
     trainset = MyDataset(txt_path='./datasets/minidata.csv', pic_path='./datasets/minipics/', transform=transform_train) #训练数据集
-    testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_test)
+    testset = MyDataset(txt_path='./datasets/minival.csv', pic_path='./datasets/minivalpics/', transform=transform_train)
 else:
     trainset = MyDataset(txt_path='./datasets/data.csv', pic_path='./datasets/pics/', transform=transform_train) #训练数据集
-    testset = MyDataset(txt_path='./datasets/val.csv', pic_path='./datasets/valpics/', transform=transform_test)
+    testset = MyDataset(txt_path='./datasets/val.csv', pic_path='./datasets/valpics/', transform=transform_train)
 
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)   #生成一个个batch进行批训练，组成batch的时候顺序打乱取
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
@@ -114,8 +116,9 @@ if __name__ == "__main__":
                     print('Accuracy: %.3f%%' % (100 * correct / total))
                     acc = 100. * correct / total
                     # 将每次测试结果实时写入acc.txt文件中
-                    print('Saving model......')
-                    torch.save(net.state_dict(), '%s/net_%03d.pth' % (args.outf, epoch + 1))
+                    if epoch % args.save_every == 0:
+                        print('Saving model......')
+                        torch.save(net.state_dict(), '%s/net_%03d.pth' % (args.outf, epoch + 1))
                     f.write("EPOCH=%03d,Accuracy= %.3f%%" % (epoch + 1, acc))
                     f.write('\n')
                     f.flush()

@@ -121,6 +121,7 @@ def datahelper(dir):
         #indexCounter = 0
         cleanedLine = cleanSentences(line)
         split = cleanedLine.split()
+#        print(split)
         texts.append(split)
     return texts, labels
 
@@ -133,7 +134,7 @@ def datahelper(dir):
 def getw2v():
     #model_file_name = 'new_model_big.txt'
     # 模型训练，生成词向量
-    sentences = w2v.Text8Corpus("text8")
+    sentences = w2v.Text8Corpus("../datasets/text8")
     model = w2v.Word2Vec(sentences, size=20, min_count=5)
     '''
     sentences = w2v.LineSentence('trainword.txt')
@@ -218,7 +219,7 @@ args['max_len']=max_len
 args['n_class']=n_class
 args['dim']=word_dim
 
-EPOCH=10;
+EPOCH=1000
 
 texts_with_id=np.zeros([len(texts),max_len])
 #词表与索引的map
@@ -252,7 +253,7 @@ for i in range(0,len(texts)):
         for j in range(0,max_len):
             texts_with_id[i][j]=word_to_idx[texts[i][j]]
 
-LR = 0.001
+LR = 0.00001
 optimizer = torch.optim.Adam(cnn.parameters(), lr=LR)
 #损失函数
 loss_function = nn.CrossEntropyLoss()
@@ -264,13 +265,14 @@ print(texts_len)
 x_train, x_test, y_train, y_test = train_test_split(texts_with_id, labels, test_size=0.2, random_state=42)
 
 #print(texts_with_id[2][3].type)
-print(y_test)
+#print(y_test)
 test_x=torch.LongTensor(x_test)
 test_y=torch.LongTensor(y_test)
 train_x=x_train
 train_y=y_train
 
 test_epoch_size=300;
+f = open("acc.log", "w")
 for epoch in range(EPOCH):
 
     for i in range(0,(int)(len(train_x)/epoch_size)):
@@ -290,12 +292,14 @@ for epoch in range(EPOCH):
         acc = acc.numpy().sum()
         accuracy = acc / (b_y.size(0))
 
-    acc_all = 0;
+    acc_all = 0
+    sum_all = 0
     for j in range(0, (int)(len(test_x) / test_epoch_size)):
         b_x = Variable(torch.LongTensor(test_x[j * test_epoch_size:j * test_epoch_size + test_epoch_size]))
         b_y = Variable(torch.LongTensor((test_y[j * test_epoch_size:j * test_epoch_size + test_epoch_size])))
         test_output = cnn(b_x)
         pred_y = torch.max(test_output, 1)[1].data.squeeze()
+        sum_all = j * test_epoch_size + test_epoch_size
         # print(pred_y)
         # print(test_y)
         acc = (pred_y == b_y)
@@ -303,5 +307,8 @@ for epoch in range(EPOCH):
         print("acc " + str(acc / b_y.size(0)))
         acc_all = acc_all + acc
 
-    accuracy = acc_all / (test_y.size(0))
-    print("epoch " + str(epoch) + " step " + str(i) + " " + "acc " + str(accuracy))
+    accuracy = acc_all / (sum_all)
+    result = "epoch " + str(epoch) + " step " + str(i) + " " + "acc " + str(accuracy)
+    print(result)
+    f.write(result+"\n")
+f.close()
