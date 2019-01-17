@@ -32,11 +32,11 @@ parser.add_argument('--name', default='text8')
 args = parser.parse_args()
 
 
-model_dir = parser.outf + parser.name + "/"
+model_dir = args.outf + args.name + "/"
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
 
-if parser.no_gpu:
+if args.no_gpu:
     device = torch.device("cpu")
 else:
     #Use GPU
@@ -168,7 +168,7 @@ vocb_size=len(word_vocb)
 #设置词表大小
 nb_words=40000
 max_len=64;
-word_dim=parser.word_dim
+word_dim=args.word_dim
 n_class=2
 
 args={}
@@ -197,9 +197,9 @@ random_dict = {}
 for word, i in word_to_idx.items():
     if i >= nb_words:
         continue
-    if parser.use_random or parser.use_normal:
+    if args.use_random or args.use_normal:
         if word not in random_dict:
-            if parser.use_random:
+            if args.use_random:
                 random_dict[word] = np.random.uniform(-1,1,size=[word_dim])
             else:
                 random_dict[word] = np.random.normal(size=[word_dim])
@@ -297,7 +297,7 @@ for epoch in range(EPOCH):
     f.flush()
     
     #Saving model
-    if epoch % parser.save_every == 0:
+    if epoch % args.save_every == 0:
         print('Saving model...')
         torch.save(net.state_dict(), '%snet_%03d.pth' % (model_dir, epoch + 1))
 f.close()
