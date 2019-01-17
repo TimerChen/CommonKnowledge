@@ -7,92 +7,48 @@ import torchvision
 import matplotlib.pyplot as plt
 import numpy as np;
 import os
-import jieba
 import gensim.models.word2vec as w2v
 from sklearn.model_selection import train_test_split
 import re
-
-def is_chinese(uchar):
-    """判断一个unicode是否是汉字"""
-    if uchar >= u'\u4e00' and uchar <= u'\u9fa5':
-        return True
-    else:
-        return False
+import argparse
 
 
-def is_number(uchar):
-    """判断一个unicode是否是数字"""
-    if uchar >= u'\u0030' and uchar <= u'\u0039':
-        return True
-    else:
-        return False
+parser = argparse.ArgumentParser(description='PyTorch Training')
+parser.add_argument('--no_gpu', dest='no_gpu', action='store_true')
+
+parser.add_argument('--w2v', default='./datasets/text8.model',)
+parser.add_argument('--w2v_self', dest='w2v_self', action='store_true')
+
+parser.add_argument('--word_dim', default=20, type=int)
+
+parser.add_argument('--use_random', dest='use_random', action='store_true')
+parser.add_argument('--use_normal', dest='use_normal', action='store_true')
+
+parser.add_argument('--save_every', default=100, type=int)
+parser.add_argument('--outf', default='./model/', help='folder to output images and model checkpoints') #输出结果保存路径
+#parser.add_argument('--load', default='./model/Resnet18.pth', help="path to net (to continue training)")  #恢复训练时的模型路径
+parser.add_argument('--name', default='text8')
+
+args = parser.parse_args()
 
 
-def is_alphabet(uchar):
-    """判断一个unicode是否是英文字母"""
-    if (uchar >= u'\u0041' and uchar <= u'\u005a') or (uchar >= u'\u0061' and uchar <= u'\u007a'):
-        return True
-    else:
-        return False
+model_dir = parser.outf + parser.name + "/"
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
 
+if parser.no_gpu:
+    device = torch.device("cpu")
+else:
+    #Use GPU
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def is_legal(uchar):
-    """判断是否非汉字，数字和英文字符"""
-    if not (is_chinese(uchar) or is_number(uchar) or is_alphabet(uchar)):
-        return False
-    else:
-        return True
-
-
-def extract_chinese(line):
-    res = ""
-    for word in line:
-        if is_legal(word):
-            res = res + word
-    return res;
 def words2line(words):
     line = ""
     for word in words:
         line = line + " " + word
     return line
-#数据预处理函数，在dir文件夹下每个子文件是一类内容
-'''def datahelper(dir):
-#返回为文本，文本对应标签
-    labels_index={}
-    index_lables={}
-    num_recs=0
-    fs = os.listdir(dir)
-    MAX_SEQUENCE_LENGTH = 200
-    MAX_NB_WORDS = 50000
-    EMBEDDING_DIM = 20
-    VALIDATION_SPLIT = 0.2
-    i = 0;
-    for f in fs:
-        labels_index[f] = i;
-        index_lables[i] = f
-        i = i + 1;
-    print(labels_index)
-    texts = []
-    labels = []  # list of label ids
-    for la in labels_index.keys():
-        print(la + " " + index_lables[labels_index[la]])
-        la_dir = dir + "/" + la;
-        fs = os.listdir(la_dir)
-        for f in fs:
-            file = open(la_dir + "/" + f, encoding='utf-8')
-            lines = file.readlines();
-            text = ''
-            for line in lines:
-                if len(line) > 5:
-                    line = extract_chinese(line)
-                    words = jieba.lcut(line, cut_all=False, HMM=True)
-                    text = words
-                    texts.append(text)
-                    labels.append(labels_index[la])
-                    num_recs = num_recs + 1
-    return texts,labels,labels_index,index_lables'''
+    
 #load word 2 vetc，加载词向量，可以事先预训练
-
 strip_special_chars = re.compile("[^A-Za-z0-9 ]+")
 num_dimensions = 150  # Dimensions for each word vector
 
@@ -131,11 +87,16 @@ def datahelper(dir):
 
 
 
-def getw2v():
+def getw2v(model_dir, sentences=None):
     #model_file_name = 'new_model_big.txt'
     # 模型训练，生成词向量
-    sentences = w2v.Text8Corpus("../datasets/text8")
-    model = w2v.Word2Vec(sentences, size=20, min_count=5)
+#    sentences = w2v.Text8Corpus("../datasets/text8")
+#    model = w2v.Word2Vec(sentences, size=20, min_count=5)
+    if sentences is None:
+        model = w2v.load(model_dir)
+    else:
+        model = w2v.Word2Vec(sentences, size=20, min_count=5)
+        model.save(model_dir)
     '''
     sentences = w2v.LineSentence('trainword.txt')
     model = w2v.Word2Vec(sentences, size=20, window=5, min_count=5, workers=4)
@@ -144,7 +105,7 @@ def getw2v():
     #model = w2v.Word2Vec.load(model_file_name)
     return model;
 
-train_dir = "../datasets/data.csv"
+train_dir = "./datasets/data.csv"
 
 #texts,labels,labels_index,index_lables=datahelper(train_dir)
 texts,labels=datahelper(train_dir)
@@ -207,7 +168,7 @@ vocb_size=len(word_vocb)
 #设置词表大小
 nb_words=40000
 max_len=64;
-word_dim=20;
+word_dim=parser.word_dim
 n_class=2
 
 args={}
@@ -226,21 +187,33 @@ texts_with_id=np.zeros([len(texts),max_len])
 word_to_idx={word:i for i,word in enumerate(word_vocb)}
 idx_to_word={word_to_idx[word]:word for word in word_to_idx}
 #每个单词的对应的词向量
-embeddings_index = getw2v()
+if args.use_self:
+    embeddings_index = getw2v(args.w2v)
+else:
+    embeddings_index = getw2v(args.w2v, texts)
 #预先处理好的词向量
 embedding_matrix = np.zeros((nb_words, word_dim))
+random_dict = {}
 for word, i in word_to_idx.items():
     if i >= nb_words:
         continue
-    if word in embeddings_index:
-        embedding_vector = embeddings_index[word]
-        if embedding_vector is not None:
-            # words not found in embedding index will be all-zeros.
-            embedding_matrix[i] = embedding_vector
+    if parser.use_random or parser.use_normal:
+        if word not in random_dict:
+            if parser.use_random:
+                random_dict[word] = np.random.uniform(-1,1,size=[word_dim])
+            else:
+                random_dict[word] = np.random.normal(size=[word_dim])
+        embedding_matrix[i] = random_dict[word]
+    else:
+        if word in embeddings_index:
+            embedding_vector = embeddings_index[word]
+            if embedding_vector is not None:
+                # words not found in embedding index will be all-zeros.
+                embedding_matrix[i] = embedding_vector
 args['embedding_matrix']=torch.Tensor(embedding_matrix)
 #构建textCNN模型
-print("词向量 done..")
-cnn=textCNN(args)
+print("Word embedding done..")
+cnn=textCNN(args).to(device)
 
 #生成训练数据，需要将训练数据的Word转换为word的索引
 for i in range(0,len(texts)):
@@ -258,7 +231,7 @@ optimizer = torch.optim.Adam(cnn.parameters(), lr=LR)
 #损失函数
 loss_function = nn.CrossEntropyLoss()
 #训练批次大小
-epoch_size=1000;
+epoch_size=1000
 texts_len=len(texts_with_id)
 print(texts_len)
 #划分训练数据和测试数据
@@ -272,43 +245,59 @@ train_x=x_train
 train_y=y_train
 
 test_epoch_size=300;
-f = open("acc.log", "w")
+f = open(model_dir+"acc.log", "w")
+best_acc = 0
 for epoch in range(EPOCH):
 
+    #Train
     for i in range(0,(int)(len(train_x)/epoch_size)):
 
         b_x = Variable(torch.LongTensor(train_x[i*epoch_size:i*epoch_size+epoch_size]))
-
         b_y = Variable(torch.LongTensor((train_y[i*epoch_size:i*epoch_size+epoch_size])))
+        b_x, b_y = b_x.to(device), b_y.to(device)
         output = cnn(b_x)
         loss = loss_function(output, b_y)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print(str(i))
-        print(loss)
+#        print(str(i), loss)
         pred_y = torch.max(output, 1)[1].data.squeeze()
         acc = (b_y == pred_y)
         acc = acc.numpy().sum()
         accuracy = acc / (b_y.size(0))
 
+    #Evalue
     acc_all = 0
     sum_all = 0
-    for j in range(0, (int)(len(test_x) / test_epoch_size)):
-        b_x = Variable(torch.LongTensor(test_x[j * test_epoch_size:j * test_epoch_size + test_epoch_size]))
-        b_y = Variable(torch.LongTensor((test_y[j * test_epoch_size:j * test_epoch_size + test_epoch_size])))
-        test_output = cnn(b_x)
-        pred_y = torch.max(test_output, 1)[1].data.squeeze()
-        sum_all = j * test_epoch_size + test_epoch_size
-        # print(pred_y)
-        # print(test_y)
-        acc = (pred_y == b_y)
-        acc = acc.numpy().sum()
-        print("acc " + str(acc / b_y.size(0)))
-        acc_all = acc_all + acc
+    with torch.no_grad():
+        for j in range(0, (int)(len(test_x) / test_epoch_size)):
+            b_x = Variable(torch.LongTensor(test_x[j * test_epoch_size:j * test_epoch_size + test_epoch_size]))
+            b_y = Variable(torch.LongTensor((test_y[j * test_epoch_size:j * test_epoch_size + test_epoch_size])))
+            b_x, b_y = b_x.to(device), b_y.to(device)
+            test_output = cnn(b_x)
+            pred_y = torch.max(test_output, 1)[1].data.squeeze()
+            sum_all = j * test_epoch_size + test_epoch_size
+            acc = (pred_y == b_y)
+            acc = acc.numpy().sum()
+#            print("acc " + str(acc / b_y.size(0)))
+            acc_all = acc_all + acc
 
     accuracy = acc_all / (sum_all)
-    result = "epoch " + str(epoch) + " step " + str(i) + " " + "acc " + str(accuracy)
+    if accuracy > best_acc:
+        with open(model_dir+"best_acc.txt", "w") as f3:
+            f3.write("EPOCH %d, best_acc %.7f%" % (epoch + 1, acc))
+        best_acc = accuracy
+        #save model
+        print("Best model: saving...")
+        
+    #Output result
+    result = "EPOCH %d, acc %.7f%" % (epoch + 1, accuracy)
     print(result)
     f.write(result+"\n")
+    f.flush()
+    
+    #Saving model
+    if epoch % parser.save_every == 0:
+        print('Saving model...')
+        torch.save(net.state_dict(), '%snet_%03d.pth' % (model_dir, epoch + 1))
 f.close()
